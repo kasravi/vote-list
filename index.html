@@ -1,0 +1,480 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Vote!</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <style>
+        @media (min-width:320px)  {
+            .device-big {
+                display: none;
+            }
+
+            .device-small {
+                display: block;
+            }
+        }
+
+        @media only screen and (min-width : 768px) {
+            .device-big, .tab-content > .tab-pane {
+                display: block;
+            }
+
+            .device-small {
+                display: none;
+            }
+
+            .tab-content > .tab-pane {
+                display: block;
+            }
+        }
+
+        #feedback {
+            font-size: 1.4em;
+        }
+
+        #feedback {
+            height: 200px;
+        }
+
+        #list .ui-selecting {
+            background: #FECA40;
+        }
+
+        #list .ui-selected {
+            background: #F39814;
+            color: white;
+        }
+
+        #list {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+        }
+
+        #list li {
+            margin: 3px;
+            padding: 0.4em;
+            font-size: 1.4em;
+            /*height: 18px;*/
+            border: 1px solid #cdcdcd;
+            cursor: pointer;
+        }
+
+        #reasonlist li {
+            margin: 10px;
+            padding: 0.4em;
+            font-size: 1.4em;
+            /*height: 18px;*/
+        }
+
+        #reasonlist {
+            list-style-type: none;
+            font-size: 1.4em;
+            margin: 5px;
+            padding: 5px;
+            width: 100%;
+        }
+
+        input[type=text] {
+            padding: 0;
+            height: 30px;
+            position: relative;
+            left: 0;
+            outline: none;
+            border: 1px solid #cdcdcd;
+            border-color: rgba(0,0,0,.15);
+            background-color: white;
+            font-size: 16px;
+        }
+
+        .advancedSearchTextbox {
+            width: 526px;
+            margin-right: -4px;
+        }
+
+        .action {
+            cursor: pointer;
+        }
+
+        /*#main {
+            //float: right;
+            //width: 75%;
+            //background:#dfdfdf;
+            //height: 2000px;
+        }
+
+        #sidebar {
+            //float: left;
+            //width: 25%;
+            //background:#efefef;
+            //height: 100%;
+        }*/
+
+        body {
+            direction: rtl;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/3.9.0/firebase.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.1.4/js.cookie.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script type="text/javascript">
+        var betterglobal, worseglobal;
+        $(document).ready(function () {
+            $.ajax({
+                type: "GET",
+                url: "data.txt",
+                dataType: "text",
+                success: function (data) {
+
+                    var partsOfStr = data.split('،');
+                    partsOfStr.sort();
+                    partsOfStr.unshift('هیچکس');
+
+                    var list = document.getElementById('list');
+                    $("#list").empty();
+                    for (i = 0; i < partsOfStr.length; i++) {
+                        var entry = document.createElement('li');
+                        entry.innerHTML = partsOfStr[i]
+                        list.appendChild(entry);
+
+                    }
+                }
+            });
+        });
+
+        var config = {
+            apiKey: "AIzaSyBWAbIhBeN6n65AAef6Pxj2ReZojPcB2a4",
+            authDomain: "voting2017-fd94c.firebaseapp.com",
+            databaseURL: "https://voting2017-fd94c.firebaseio.com",
+            projectId: "voting2017-fd94c",
+            storageBucket: "voting2017-fd94c.appspot.com",
+            messagingSenderId: "867696419072"
+        };
+        firebase.initializeApp(config);
+
+
+        function sortUnorderedList(ul, sortDescending) {
+            if (typeof ul == "string")
+                ul = document.getElementById(ul);
+
+            var lis = ul.getElementsByTagName("li");
+            var vals = [];
+
+            for (var i = 0, l = lis.length; i < l; i++)
+                vals.push(lis[i].innerHTML);
+
+            comparer(vals, function (val) {
+                vals.sort(function (a, b) {
+                    return val[a + "-" + b];
+                })
+                for (var i = 0, l = lis.length; i < l; i++)
+                    lis[i].innerHTML = vals[i];
+            })
+
+
+
+
+        }
+
+        function load() {
+
+            var list = document.getElementById('reasonlist');
+            var tempRef = firebase.database().ref();
+            tempRef.on('value', function (snapshot) {
+                $("#reasonlist").empty();
+                var res = snapshot.exportVal();
+                if (!res) { return }
+                var key, votes;
+                for (var i in res) {
+                    var t = Cookies.get('votesystemids');
+                    if (!t || t.indexOf(res[i].id) === -1) {
+                        key = i;
+                        votes = res[i].votes;
+                        var entry = document.createElement('li');
+                        entry.innerHTML = res[i].reason + ' <span class="action" onclick="changeVote(&quot;' + res[i].id + '&quot;,1)"> &#128077; </span> <span class="action" onclick="changeVote(&quot;' + res[i].id + '&quot;,-1)" > &#128078; </span> <span class="action" onclick="addCookie(&quot;' + res[i].id + '&quot;,true)" > &#128528; </span>' + ' (' + res[i].votes + ')';
+                        list.appendChild(entry);
+                    }
+                }
+                for (var i in res) {
+                    var t = Cookies.get('votesystemids');
+                    if (t && t.indexOf(res[i].id) !== -1) {
+                        key = i;
+                        votes = res[i].votes;
+                        var entry = document.createElement('li');
+                        entry.innerHTML = '<span style="opacity:0.3;">' + res[i].reason + ' (' + res[i].votes + ') </span> ';
+                        list.appendChild(entry);
+                    }
+                }
+                sortUnorderedList("list", false);
+                filter($("#filtertext"));
+            });
+
+
+        }
+        window.onload = function () {
+            load();
+            document.getElementById("test").onclick = function () {
+                var better = $("#better").text();
+                var worse = $("#worse").text();
+                var reason = $("#myText").val();
+                if (!better || !worse) {
+                    alert("لطفاً دو نفر را انتخاب نمایید");
+                    return false;
+                }
+                if (!reason) {
+                    alert("لطقاً دلیلی بگویید");
+                    return false;
+                }
+
+                insertComparison(better, worse, $("#select-result").text() + " " + reason)
+                alert("نظر شما ثبت شد");
+                $("#list > li").removeClass('ui-selected');
+                return false;
+            }
+
+        }
+
+        $(function () {
+            $("#list").bind("mousedown", function (e) {
+                e.metaKey = true;
+            }).selectable({
+                selected: function (event, ui) {
+                    if ($(ui.selected).hasClass('click-selected')) {
+                        $(ui.selected).removeClass('ui-selected click-selected');
+
+                    } else {
+                        $(ui.selected).addClass('click-selected');
+
+                    }
+                },
+                unselected: function (event, ui) {
+                    $(ui.unselected).removeClass('click-selected');
+                },
+                selecting: function (event, ui) {
+                    if ($(".ui-selected, .ui-selecting").length > 2) {
+                        $('.ui-selecting').removeClass("ui-selecting");
+                    }
+                }
+			  , stop: function () {
+			      var result = $("#select-result").empty();
+			      result.append("من فکر می کنم ")
+			      var counter = 0;
+			      $($(".ui-selected", this).get().reverse()).each(function () {
+			          result.append("<span id='" + ((counter > 0) ? "better" : "worse") + "'>" + ($(this).text()) + "</span>" + ((counter > 0) ? "" : " بهتر از "));
+			          counter++;
+			      });
+			      result.append(" است چرا که")
+			  }
+            });
+        });
+
+        function filter(element) {
+            var value = $(element).val();
+
+            $("#reasonlist > li").each(function () {
+                if ($(this).text().search(value) > -1) {
+                    $(this).show();
+                }
+                else {
+                    $(this).hide();
+                }
+            });
+        }
+
+        function getTotalVote(canditates, cb) {
+            var res = {};
+
+            canditates.forEach(function (better) {
+                res[better] = 0;
+                canditates.forEach(function (worse) {
+                    if (better !== worse) {
+
+                        getVote(worse, better, function (val) {
+                            agg(res, better, val);
+                        });
+                    }
+                })
+            });
+            var count = 0;
+            function agg(result, candidate, value) {
+                count++;
+                if (value) {
+                    result[candidate] += value;
+                }
+                if (count === canditates.length * (canditates.length - 1)) {
+                    cb(res);
+                }
+            }
+
+        }
+
+        function sortFunction(list, cb) {
+            var vals = [];
+
+            for (var i = 0, l = list.length; i < l; i++)
+                vals.push(list[i]);
+
+
+            list.forEach(function (better, i) {
+
+                list.forEach(function (worse, j) {
+                    if (better !== worse) {
+
+                        getVote(better, worse, function (val) {
+                            getVote(worse, better, function (val2) {
+                                agg(j, i, val - val2);
+                            })
+
+                        });
+                    }
+                })
+            });
+
+            var count = 0;
+            function agg(i, j, value) {
+                count++;
+                if (value) {
+                    if ((value < 0)) {
+                        console.log("(" + value + ")" + vals[vals.indexOf(list[i])] + "/" + vals[vals.indexOf(list[j])]);
+                        var b = vals[vals.indexOf(list[i])];
+                        vals[vals.indexOf(list[i])] = vals[vals.indexOf(list[j])];
+                        vals[vals.indexOf(list[j])] = b;
+                    }
+                }
+                if (count === list.length * (list.length - 1)) {
+                    cb(vals);
+                }
+            }
+
+        }
+
+        function comparer(list, cb) {
+            var vals = [];
+            var count = 0;
+            list.forEach(function (better, i) {
+                list.forEach(function (worse, j) {
+                    if (better !== worse) {
+                        getVote(better, worse, function (val) {
+
+                            getVote(worse, better, function (val2) {
+
+                                if (!val) val = 0;
+                                if (!val2) val2 = 0;
+                                agg(better, worse, val - val2);
+                            })
+
+                        });
+                    }
+                })
+            });
+
+            function agg(i, j, value) {
+                count++;
+                vals[i + "-" + j] = value;
+                if (count === list.length * (list.length - 1)) {
+                    cb(vals);
+                }
+            }
+
+        }
+        function getVote(better, worse, val) {
+
+            var updateRef = firebase.database().ref().orderByChild('combined').startAt(better + "-" + worse).endAt(better + "-" + worse);
+
+            updateRef.once('value', function (snapshot) {
+
+                var res = snapshot.exportVal();
+                if (!res) { return val(null); }
+                var key, votes = 0;
+                for (var i in res) {
+                    key = i;
+                    votes += res[i].votes;
+                }
+                val(votes);
+            });
+
+        }
+
+        function insertComparison(better, worse, reason) {
+            var rootRef = firebase.database().ref();
+            rootRef.push({ id: guid(), betterChoice: better, worseChoice: worse, reason: reason, votes: 0, combined: better + "-" + worse });
+        }
+
+        function addCookie(id, refresh) {
+            var t = Cookies.get('votesystemids');
+            Cookies.set('votesystemids', t + id);
+            if (refresh)
+                load();
+        }
+
+        function changeVote(id, val) {
+            addCookie(id)
+            var updateRef = firebase.database().ref().orderByChild('id').startAt(id).endAt(id).limitToLast(1);
+            updateRef.once('value', function (snapshot) {
+
+                var res = snapshot.exportVal();
+                if (!res) { return }
+                var key, votes;
+                for (var i in res) {
+                    key = i;
+                    votes = res[i].votes;
+                }
+                firebase.database().ref().child(key).update({ votes: votes + val });
+            });
+        }
+
+        function guid() {
+            function s4() {
+                return Math.floor((1 + Math.random()) * 0x10000)
+                  .toString(16)
+                  .substring(1);
+            }
+            return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+              s4() + '-' + s4() + s4() + s4();
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div style="text-align: center; margin:10px; font-size:2.0em;">
+                <p>لیست شورای شهر تهران</p>
+            </div>
+        </div>
+        <div class="row">
+
+
+            <!-- Nav tabs -->
+            <ul class="nav nav-tabs device-small" role="tablist">
+                <li style="width:50%" role="presentation" class="active"><a href="#home" aria-controls="home" role="tab" data-toggle="tab">لیست</a></li>
+                <li style="width:50%" role="presentation"><a href="#profile" aria-controls="profile" role="tab" data-toggle="tab">دلایل</a></li>
+            </ul>
+
+            <!-- Tab panes -->
+            <div class="tab-content">
+                <div role="tabpanel" class="tab-pane active col col-xs-12 col-sm-4" id="home">
+                    <div style="margin:10px;">
+                        <p id="feedback">
+                            <span id="select-result">لطفاً دو نفر را انتخاب کنید</span><input type="text" class="advancedSearchTextBox" id="myText"> <input type="button" id="test" value="Submit" />
+                        </p>
+                    </div>
+                    <ul id="list"></ul>
+                </div>
+                <div role="tabpanel" class="tab-pane col-xs-12 col-sm-8" id="profile">
+                    <input type="text" placeholder="فیلتر" id="filtertext" onkeyup="filter(this)" />
+                    <ul id="reasonlist"></ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+</body>
+</html>
