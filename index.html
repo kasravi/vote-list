@@ -120,6 +120,7 @@
     </style>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	<script type="text/javascript" src="merge-sort.js"></script>
     <script src="https://www.gstatic.com/firebasejs/3.9.0/firebase.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-cookie/2.1.4/js.cookie.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
@@ -169,18 +170,14 @@
             for (var i = 0, l = lis.length; i < l; i++)
                 vals.push(lis[i].innerHTML);
 
-            comparer(vals, function (val) {
-                vals.sort(function (a, b) {
-                    return val[a + "-" + b];
-                })
-                for (var i = 0, l = lis.length; i < l; i++)
+			comparer(vals, function (val) {
+                vals.mergeSort(function (a, b) {
+				return val[a + "-" + b];
+				})
+				for (var i = 0, l = lis.length; i < l; i++)
                     lis[i].innerHTML = vals[i];
             })
-
-
-
-
-        }
+		}
 
         function load() {
 
@@ -260,20 +257,45 @@
                     if ($(".ui-selected, .ui-selecting").length > 2) {
                         $('.ui-selecting').removeClass("ui-selecting");
                     }
-                }
-			  , stop: function () {
+                }, 
+				stop: function () {
 			      var result = $("#select-result").empty();
 			      result.append("من فکر می کنم ")
 			      var counter = 0;
-			      $($(".ui-selected", this).get().reverse()).each(function () {
-			          result.append("<span id='" + ((counter > 0) ? "better" : "worse") + "'>" + ($(this).text()) + "</span>" + ((counter > 0) ? "" : " بهتر از "));
+				  var temp;
+				  if($("#reverseCheck").is(':checked')){
+					temp = $(".ui-selected", this).get();
+				  }
+				  else{
+					temp = $(".ui-selected", this).get().reverse();
+				  }
+			      $(temp).each(function (index,val) {
+			          result.append("<span id='" + ((counter > 0) ? "better" : "worse") + "'>" + ($(val).text()) + "</span>" + ((counter > 0) ? "" : " بهتر از "));
 			          counter++;
 			      });
 			      result.append(" است چرا که")
 			  }
             });
         });
-
+		
+		function reverseCheckFunc(){
+			var result = $("#select-result").empty();
+			result.append("من فکر می کنم ")
+			var counter = 0;
+			var temp;
+			if($("#reverseCheck").is(':checked')){
+			temp = $(".ui-selected").get();
+			}
+			else{
+			temp = $(".ui-selected").get().reverse();
+			}
+			$(temp).each(function (index,val) {
+			console.log($(val).text());
+			  result.append("<span id='" + ((counter > 0) ? "better" : "worse") + "'>" + ($(val).text()) + "</span>" + ((counter > 0) ? "" : " بهتر از "));
+			  counter++;
+			});
+			result.append(" است چرا که")
+		}
         function filter(element) {
             var value = $(element).val();
 
@@ -461,7 +483,7 @@
                 <div role="tabpanel" class="tab-pane active col col-xs-12 col-sm-4" id="home">
                     <div style="margin:10px;">
                         <p id="feedback">
-                            <span id="select-result">لطفاً دو نفر را انتخاب کنید</span><input type="text" class="advancedSearchTextBox" id="myText"> <input type="button" id="test" value="Submit" />
+                            <span id="select-result">لطفاً دو نفر را انتخاب کنید</span><input type="text" class="advancedSearchTextBox" id="myText"> <input type="button" id="test" value="Submit" /></br><input id="reverseCheck" type="checkbox" onchange="reverseCheckFunc()"> برعکس؟ </input>
                         </p>
                     </div>
                     <ul id="list"></ul>
